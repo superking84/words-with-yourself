@@ -7,7 +7,7 @@ workable for this game.
 '''
 
 import random
-import letters
+from letters import Alphabet
 # import colors -- Needed?
 
 class Field(object):
@@ -46,19 +46,15 @@ class Field(object):
     __str__ = __repr__
         
     def active_tile_has_landed(self):
-        # TODO: Wordtris has two floors
+        '''
+        
+        '''
         tile = self.active_tile
         
-        for coordinate in tile.locations:
-            row, column = coordinate
-            row_beneath = row + 1
-            if row_beneath >= self.num_rows:
-                return True
-                
-            cell_beneath = self.cells[row_beneath][column]
-            
-            if cell_beneath and (row_beneath, column) not in tile.locations:
-                return True
+        row, column = tile.location
+        row_beneath = row + 1
+        if row_beneath >= self.floor:
+            return True
                 
     def add_tile_to_queue(self, tile):
         self.tile_queue.append(tile)
@@ -106,6 +102,7 @@ class Field(object):
         self.place_active_tile((row + delta_row, column + delta_column))
     
     def place_active_tile(self, location):
+        pass
         # TODO
 
 class Tile(object):
@@ -117,8 +114,8 @@ class Tile(object):
     going, I plan on loading the alphabet into the game in a way that will
     allow for extensibility.
     '''
-
     def __init__(self, field, letter=None):
+        self.location = None
         self.field = field
         if letter:
             self.letter = letter
@@ -126,6 +123,29 @@ class Tile(object):
             self.letter = 'wildcard'
         
     def __repr__(self):
-        # TODO
+        return "%s" % self.letter
         
     __str__ = __repr__
+    
+    def push_tile_below(self, field):
+        row, column = self.location
+        if (row + 1) >= self.field.num_rows:
+            return False
+        
+        if self.field[row+1][column]:
+            tile_below = self.field[row+1][column]
+        
+            if tile_below.push_tile_below(field):
+                self.location = (row + 1, column)
+                self.field[row+1][column] = self # adjust to Field method
+                self.field[row][column] = None
+                return True
+            else:
+                return False
+                
+        else:
+            self.location = (row + 1, column)
+            self.field[row+1][column] = self
+            self.field[row][column] = None
+            return True
+            
