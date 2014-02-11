@@ -1,14 +1,5 @@
-'''
-This file will be used for my Field and Tile objects for Words With Yourself
-(WWY).  It was pulled directly from my Tetris-clone project and has not yet
-been altered significantly.  While I consider these classes to be an excellent
-basis for what I plan on doing, they will need some significant changes to be
-workable for this game.
-'''
-
 import random
 from letters import Alphabet
-# import colors -- Needed?
 
 class Field(object):
     '''
@@ -19,8 +10,11 @@ class Field(object):
     '''
 
     def __init__(self, language, num_rows, num_columns):
+        self.language = language
         self.letters = Alphabet(language).letters + [None]
         self.num_rows = num_rows
+        self.floor_one = (num_rows / 2) - 1
+        self.floor_two = num_rows
         self.num_columns = num_columns
         self.cells = []
         self.active_tile = None
@@ -38,23 +32,24 @@ class Field(object):
     def __getitem__(self, key):
         return self.cells[key]
         
-    def __repr__(self):
+    def __str__(self):
         output = '\n'.join([str([cell for cell in row]) for row in self.cells])
         
         return "Field state:\n" + output
         
-    __str__ = __repr__
+    def __repr__(self):
+        tokens = (self.language, self.num_rows, self.num_columns)
+        output = "Field, language: %s, dimensions: (%d,%d)" % tokens
+            
+        return output
         
     def active_tile_has_landed(self):
-        '''
-        
-        '''
         tile = self.active_tile
         
         row, column = tile.location
         row_beneath = row + 1
-        if row_beneath >= self.floor:
-            return True
+        return (row_beneath >= self.floor_one) or \
+                self[row_beneath][column] != None
                 
     def add_tile_to_queue(self, tile):
         self.tile_queue.append(tile)
