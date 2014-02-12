@@ -28,9 +28,6 @@ class Field(object):
                 
         self.load_queue()
         self.get_tile_from_queue()
-                
-    def __getitem__(self, key):
-        return self.cells[key]
         
     def __str__(self):
         output = '\n'.join([str([cell for cell in row]) for row in self.cells])
@@ -49,7 +46,7 @@ class Field(object):
         row, column = tile.location
         row_beneath = row + 1
         return (row_beneath >= self.floor_one) or \
-                self[row_beneath][column] != None
+                self.cells[row_beneath][column] != None
                 
     def add_tile_to_queue(self, tile):
         self.tile_queue.append(tile)
@@ -58,6 +55,9 @@ class Field(object):
         # TODO: Create weighted random letter algorithm that takes into account
         # letter frequency
         return Tile(self, random.choice(self.letters))
+        
+    def deactivate_active_tile(self):
+        self.active_tile = None
         
     def drop_active_tile(self):
         while not self.active_tile_has_landed():
@@ -77,29 +77,25 @@ class Field(object):
             
     def move_active_tile(self, direction):
         tile = self.active_tile
-        delta_row, delta_column = direction
+        row, column = tile.location
+        new_row, new_column = (row + direction[0], column + direction[1])
+        if new_column not in range(0, self.num_columns) or\
+           self.cells[new_row][new_column]:
+            return False
         
-        for coordinate in tile.locations:
-            row, column = coordinate
-            new_row, new_column = (row + delta_row, column + delta_column)
-            if new_column >= self.num_columns:
-                return False
-            if self.cells[new_row][new_column] and \
-               not self.cells[new_row][new_column]['active']:
-                return False
-            
-                
-        for coordinate in tile.locations:
-            row, column = coordinate
-            self.cells[row][column] = None
-        
-        row, column = tile.locations[0]
-        self.place_active_tile((row + delta_row, column + delta_column))
+        self.cells[row][column] = None
+        self.place_active_tile((new_row, new_column))
     
     def place_active_tile(self, location):
-        pass
-        # TODO
+        row, column = location
+        if self.cells[row][column]:
+            return False
+        else:
+            self.cells[row][column] = self.active_tile
+            self.active_tile.location = location
+            return True
 
+        
 class Tile(object):
     '''
     A simple, one-square tile representing one of the 26 letters of the 

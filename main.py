@@ -16,7 +16,7 @@ clock = pygame.time.Clock()
 FPS = 40
 times_large = pygame.font.SysFont("Times New Roman", 72)
 times_small = pygame.font.SysFont("Times New Roman", 18, bold=True)
-times_tile = pygame.font.SysFOnt("Times New Roman", 6)
+times_tile = pygame.font.SysFont("Times New Roman", 6)
 
 # draw constants
 # a lot of the constants are related to one another to create
@@ -52,28 +52,22 @@ def draw_screen(surface, field):
         (FIELD_WIDTH, SCREEN_HEIGHT))
     pygame.draw.line(surface, BLACK, (FIELD_WIDTH, (SCREEN_HEIGHT / 4) * 3), \
         (SCREEN_WIDTH, (SCREEN_HEIGHT / 4) * 3))
-        
-    
+            
 def draw_outlined_rect(surface, color, rect):
     pygame.draw.rect(surface, color, rect)
     pygame.draw.rect(surface, BLACK, rect, 1)
-    
-    
+       
 def tick(field):
     if field.active_tile_has_landed():
         field.deactivate_active_tile()
-        
-    for i in range(len(field.cells)):
-        if all(field.cells[i]):
-            field.cells.pop(i)
-            field.cells.insert(0, [None for j in range(field.num_columns)])
     
     if not field.active_tile:
         field.get_tile_from_queue()
-        if not field.place_active_tile((1,4)):
+        if not field.place_active_tile((0,4)):
             return False
+    else:
+        field.move_active_tile([1,0])
     
-    field.move_active_tile([1,0])
     return True
      
 def intro():
@@ -131,8 +125,8 @@ def play():
     
     # game-specific objects
     directions = {K_LEFT:[0,-1], K_RIGHT:[0,1]}
-    field = objects.Field(NUM_ROWS, NUM_COLUMNS)
-    field.place_active_tile((1,4))
+    field = objects.Field('english', NUM_ROWS, NUM_COLUMNS)
+    field.place_active_tile((0,4))
     time_counter = 0
     tick_delay = 600
     pause = False
@@ -158,8 +152,6 @@ def play():
                             scrambled_msg = scrambler.get_scrambled_word()
                             pause_text = times_large.render(scrambled_msg, True, BLACK)
                 if not (pause or game_over):
-                    if event.key == K_UP:
-                        field.rotate_active_tile()
                     if event.key in directions:
                         field.move_active_tile(directions[event.key])
                     if event.key == K_DOWN:
@@ -176,7 +168,6 @@ def play():
             if game_over:
                 DISPLAYSURFACE.blit(game_over_text, game_over_text_rect)
                 
-        
         pygame.display.update()
         clock.tick(FPS)
         
