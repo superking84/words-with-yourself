@@ -4,7 +4,7 @@ import pygame
 from pygame.locals import *
 import objects
 from colors import *
-import scramble
+import letters, scramble
 
 # set the window's position onscreen
 x = 450
@@ -16,7 +16,7 @@ clock = pygame.time.Clock()
 FPS = 40
 times_large = pygame.font.SysFont("Times New Roman", 72)
 times_small = pygame.font.SysFont("Times New Roman", 18, bold=True)
-times_tile = pygame.font.SysFont("Times New Roman", 6)
+times_tile = pygame.font.SysFont("Times New Roman", 16)
 
 # draw constants
 # a lot of the constants are related to one another to create
@@ -46,6 +46,15 @@ def draw_screen(surface, field):
                 tile_rect = pygame.Rect(j * CELL_WIDTH, i * CELL_HEIGHT, \
                                          CELL_WIDTH, CELL_HEIGHT)
                 draw_outlined_rect(surface, RED, tile_rect)
+                if field.cells[i][j].letter:
+                    letter = field.cells[i][j].letter
+                    text = times_tile.render(letter, True, WHITE)
+                    text_rect = text.get_rect()
+                    text_rect.centery = i * CELL_HEIGHT + 10
+                    text_rect.centerx = j * CELL_WIDTH + 10
+                    DISPLAYSURFACE.blit(text, text_rect)
+                else:
+                    letter = None
                 
     # field boundaries
     pygame.draw.line(surface, BLACK, (FIELD_WIDTH, 0), \
@@ -128,7 +137,7 @@ def play():
     field = objects.Field('english', NUM_ROWS, NUM_COLUMNS)
     field.place_active_tile((0,4))
     time_counter = 0
-    tick_delay = 600
+    tick_delay = 900
     pause = False
     game_over = False
     
@@ -158,7 +167,20 @@ def play():
                         time_counter = tick_delay
                     if event.key == K_SPACE:
                         field.drop_active_tile()
-                    
+                    if event.key == K_z:
+                        if field.active_tile.wildcard:
+                            letter = field.active_tile.letter
+                            letter_list = letters.languages[field.language]
+                            letter_count = len(letter_list)
+                            if letter:
+                                index = letter_list.index(letter)
+                                new_index = (index + 1) % letter_count
+                            else:
+                                new_index = 0
+                                
+                            field.active_tile.letter = letter_list[new_index]
+                    if event.key == K_s:
+                        field.stage_tile()
                     
         DISPLAYSURFACE.fill(LIGHT_GREY)
         if pause:

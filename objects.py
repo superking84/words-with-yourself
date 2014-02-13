@@ -94,6 +94,12 @@ class Field(object):
             self.cells[row][column] = self.active_tile
             self.active_tile.location = location
             return True
+            
+    def stage_tile(self):
+        '''
+        Stage a wildcard tile as the next tile in the queue.
+        '''
+        self.tile_queue[0] = Tile(self, 'wildcard')
 
         
 class Tile(object):
@@ -105,13 +111,15 @@ class Tile(object):
     going, I plan on loading the alphabet into the game in a way that will
     allow for extensibility.
     '''
-    def __init__(self, field, letter=None):
+    def __init__(self, field, letter='wildcard'):
         self.location = None
         self.field = field
-        if letter:
-            self.letter = letter
+        if letter == 'wildcard':
+            self.letter = None
+            self.wildcard = True
         else:
-            self.letter = 'wildcard'
+            self.letter = letter
+            self.wildcard = False
         
     def __repr__(self):
         return "%s" % self.letter
