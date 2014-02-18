@@ -68,14 +68,16 @@ def draw_outlined_rect(surface, color, rect):
        
 def tick(field):
     if field.active_tile_has_landed():
+        active_tile_column = field.active_tile.location[1]
+        field.drop_column(active_tile_column)
         field.deactivate_active_tile()
     
     if not field.active_tile:
         field.get_tile_from_queue()
-        if not field.place_active_tile((0,4)):
+        if not field.place_tile(field.active_tile, (0,4)):
             return False
     else:
-        field.move_active_tile([1,0])
+        field.move_tile(field.active_tile, [1,0])
     
     return True
      
@@ -135,7 +137,7 @@ def play():
     # game-specific objects
     directions = {K_LEFT:[0,-1], K_RIGHT:[0,1]}
     field = objects.Field('english', NUM_ROWS, NUM_COLUMNS)
-    field.place_active_tile((0,4))
+    field.place_tile(field.active_tile, (0,4))
     time_counter = 0
     tick_delay = 900
     pause = False
@@ -162,23 +164,15 @@ def play():
                             pause_text = times_large.render(scrambled_msg, True, BLACK)
                 if not (pause or game_over):
                     if event.key in directions:
-                        field.move_active_tile(directions[event.key])
+                        field.move_tile(field.active_tile, directions[event.key])
                     if event.key == K_DOWN:
                         time_counter = tick_delay
                     if event.key == K_SPACE:
                         field.drop_active_tile()
+                    if event.key == K_x:
+                        field.change_wildcard_letter(forward=True)
                     if event.key == K_z:
-                        if field.active_tile.wildcard:
-                            letter = field.active_tile.letter
-                            letter_list = letters.languages[field.language]
-                            letter_count = len(letter_list)
-                            if letter:
-                                index = letter_list.index(letter)
-                                new_index = (index + 1) % letter_count
-                            else:
-                                new_index = 0
-                                
-                            field.active_tile.letter = letter_list[new_index]
+                        field.change_wildcard_letter(forward=False)
                     if event.key == K_s:
                         field.stage_tile()
                     

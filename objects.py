@@ -1,5 +1,5 @@
 import random
-from letters import Alphabet
+import letters
 
 class Field(object):
     '''
@@ -11,10 +11,10 @@ class Field(object):
 
     def __init__(self, language, num_rows, num_columns):
         self.language = language
-        self.letters = Alphabet(language).letters + [None]
+        self.letters = letters.Alphabet(language).letters + [None]
         self.num_rows = num_rows
         self.floor_one = (num_rows / 2) - 1
-        self.floor_two = num_rows
+        self.floor_two = num_rows - 1
         self.num_columns = num_columns
         self.cells = []
         self.active_tile = None
@@ -51,6 +51,22 @@ class Field(object):
     def add_tile_to_queue(self, tile):
         self.tile_queue.append(tile)
     
+    def change_wildcard_letter(self, forward):
+        if self.active_tile.wildcard:
+            letter = self.active_tile.letter
+            letter_list = letters.languages[self.language]
+            letter_count = len(letter_list)
+            if letter:
+                index = letter_list.index(letter)
+                if forward:
+                    new_index = (index + 1) % letter_count
+                else:
+                    new_index = (index - 1) % letter_count
+            else:
+                new_index = 0 if forward else letter_count - 1
+                
+            self.active_tile.letter = letter_list[new_index]
+            
     def create_random_tile(self):
         # TODO: Create weighted random letter algorithm that takes into account
         # letter frequency
@@ -61,7 +77,24 @@ class Field(object):
         
     def drop_active_tile(self):
         while not self.active_tile_has_landed():
-            self.move_active_tile([1,0])
+            self.move_tile(self.active_tile, [1,0])
+            
+    def drop_column(self, column_number):
+        if self.cells[self.floor_two][column_number]: # column is full
+            return None
+        else:
+            column_tiles = [self.active_tile]
+            current_row = self.active_tile.location[0] + 1
+            for i in range(current_row, self.num_rows):
+                if self.cells[i][column_number]:
+                    column_tiles.append(self.cells[i][column_number])
+                    current_row += 1
+                
+            if len(column_tiles) == 1:
+                return None
+            
+            for tile in reversed(column_tiles): # move from bottom to top
+                self.move_tile(tile, [1,0])
     
     def get_tile_from_queue(self):
         if self.tile_queue:
@@ -75,8 +108,7 @@ class Field(object):
             tile = self.create_random_tile()
             self.add_tile_to_queue(tile)
             
-    def move_active_tile(self, direction):
-        tile = self.active_tile
+    def move_tile(self, tile, direction):
         row, column = tile.location
         new_row, new_column = (row + direction[0], column + direction[1])
         if new_column not in range(0, self.num_columns) or\
@@ -84,15 +116,15 @@ class Field(object):
             return False
         
         self.cells[row][column] = None
-        self.place_active_tile((new_row, new_column))
+        self.place_tile(tile, (new_row, new_column))
     
-    def place_active_tile(self, location):
+    def place_tile(self, tile, location):
         row, column = location
         if self.cells[row][column]:
             return False
         else:
-            self.cells[row][column] = self.active_tile
-            self.active_tile.location = location
+            self.cells[row][column] = tile
+            tile.location = location
             return True
             
     def stage_tile(self):
