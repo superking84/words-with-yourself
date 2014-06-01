@@ -1,3 +1,4 @@
+import os
 import random
 import letters
 
@@ -11,7 +12,7 @@ class Field(object):
 
     def __init__(self, language, num_rows, num_columns):
         self.language = language
-        self.letters = letters.Alphabet(language).letters + [None]
+        self.letters = letters.Alphabet(language).weighted + ([None] * 5000)
         self.num_rows = num_rows
         self.floor_one = (num_rows / 2) - 1
         self.floor_two = num_rows - 1
@@ -68,9 +69,11 @@ class Field(object):
             self.active_tile.letter = letter_list[new_index]
             
     def create_random_tile(self):
-        # TODO: Create weighted random letter algorithm that takes into account
-        # letter frequency
-        return Tile(self, random.choice(self.letters))
+        letter = random.choice(self.letters)
+        tile = Tile(self, letter)
+        if not tile.letter:
+            tile.wildcard = True    
+        return tile
         
     def deactivate_active_tile(self):
         self.active_tile = None
@@ -132,8 +135,7 @@ class Field(object):
         Stage a wildcard tile as the next tile in the queue.
         '''
         self.tile_queue[0] = Tile(self, 'wildcard')
-
-        
+    
 class Tile(object):
     '''
     A simple, one-square tile representing one of the 26 letters of the 
@@ -180,3 +182,34 @@ class Tile(object):
             self.field[row][column] = None
             return True
             
+
+class LetterPool(object):
+    """
+    This object will keep a list of letters, weighted by probability in order
+    to maintain a more helpful distribution of letters throughout the game.
+    Letter frequencies by word were found at:
+    http://en.wikipedia.org/wiki/Letter_frequency#Relative_frequencies_of_letters_in_the_English_language
+    """
+    FILE_DIRECTORY = os.getcwd() + os.sep + "letterfiles" + os.sep
+    LANGUAGES = []
+    for file_name in os.listdir(FILE_DIRECTORY):
+        dot = file_name.index('.')
+        LANGUAGES.append(file_name[:dot])
+        
+    def __init__(self, language):
+        self.language = language
+        
+    def parseLetterFile(self):
+        file = open(FILE_DIRECTORY + self.language + ".csv")
+        
+            
+class Wordlist(object):
+    """
+    The list of words that the game will check against to search for a match.
+    Will be extensible for multiple languages.
+    """
+    def __init__(self, language):
+        if language == "debug":
+            self.words = {"a", "test", "module", "for", "words"}
+        else:
+            raise NotImplementedError

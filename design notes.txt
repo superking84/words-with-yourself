@@ -1,0 +1,85 @@
+What does the game have right now?
+
+1. The blocks each contain a letter
+2. Block-dropping behavior mimics Wordtris.
+
+
+The physical behavior of the game is where it needs to be!  I don't think any
+more adjustments need to be done there.  What I need to focus on now is the
+functionality that will allow me to create the fully fleshed-out game.
+
+First, I will create the wordlist that the game will draw on for word-matching.
+I will create a function that calculates a word score for each word.
+
+5/25/2014: I am missing 3 major components:
+    1. A list of words to actually compare against. -- DONE!
+    2. The logic to do so.
+    3. A letter frequency handler, so that B isn't coming out as often as X, Q as often as E, etc.
+    
+    Wordlists and letter frequency histograms should be loaded into the game already parsed -- parsing should be done externally so that if needed, the game can take information from other sources.
+    
+#2: Word check logic. Let us assume a finished tick, and a 10x5 grid full of cells. How do I check if there is a word anywhere in that grid in the most efficient and accurate way possibly?
+    1. One important principle I need to keep in mind is that if there has not been a change somewhere, then I don't need to check again. It seems I would only need to check the top row(where the active tile[AT] lands) and the AT's column, but there are edge cases. For example, a word can appear anywhere in the grid and does not have to include the active tile.
+    
+    T N E
+    A G D
+    
+    If I have a section that looks like the above, and I drop the active tile above the last column, then the E drops down and I look like this:
+    
+    T N X
+    A G E
+    
+    Which creates the word AGE. So then I actually need to check AT's column as well as every row beneath it (if it pushes the blocks below it). If a word occurs, than I have to check the row/column that the word came from, as well as every column/row its letters appeared in.  Essentially, though, what I do NOT need to do is check the whole board every single tick.
+    
+Let's do some pseudocode and try to suss out a word_check function, which should run every time a tile lands.
+    If the active title has landed, then do the word_check
+    word_check(field, location) (location here refers to the location where the active tile landed)
+        1. Let row, column = location
+        2. Check if there are any words in column -- since the new word would have to start with the active tile's letter, need only check words starting with said letter
+            2a. Let collength = the current length of column after active tile drops.
+            2b. Let maxwordlength = 10, or the length of the column, whichever is lower.
+            2c. If collength < 3, skip to #3 since the shortest word length is 3.
+            2d. If collength >= 3, then create a list of candidates as follows:
+                2d1. Let colletters = the letter from each row that coincides with column. As an example, let our colletters be ['A', 'X', 'E', 'D', 'C', 'R,' 'R']. In this example, maxwordlength is 7.
+            2e. Counting down from l = maxwordlength to 3, check if the string created by joining l number of letters from colletters is present in the wordlist. If so, call on_word_found.
+                Essentially, it would look like this:
+                    for i in range(maxwordlength,2,-1):
+                        if colletters[:i] in wordlist:
+                            on_word_found(colletters[:i])
+                            break
+            2f. If a word is not found, pass without doing anything else.
+        3. Check if there are any words row-wise. Places to check include:
+            The row where the active tile landed
+            IF there was space below active tile and the column moved, then every row below active tile also needs to be checked.
+            Since the row check is the same regardless of which row it is, I will only detail the process once.
+            3a. Let row = the current row, column = the column where active tile dropped. We will need to examine each letter in the row, starting from row[0] to row[column]. 
+            3b. The difference here is that there can be gaps in the row, so we only need to look at the single, unbroken portion of the row that contains index column. Need to figure out how to get this done.
+                3b1. Example row [0, 1, 2, None, 4, None, 6, 7, 8].
+                3b2. def strip_row(row, column_index):
+                        temp_row = []
+                        for i in range(column_index):
+                            if row[i] is None:
+                                temp_row = row[i:]
+                                
+                        for j in range(column_index+1,len(row)):
+                            if row[j] is None:
+                                temp_row = temp_row[:j]
+                                break
+                                
+                        return temp_row
+                        
+VALID WORDS NEED TO DISAPPEAR!
+Let's talk about making valid words disappear. This will be similar to, yet more complicated than Tritetris. In Tritetris, ONLY complete lines disappeared, which means all I had to do was pop the line from the grid and push a new, blank one on top.
+
+In WWY, the following combinations of blocks can be removed:
+1. One or more rows of 3+ blocks.
+2. One or more columns of 3+ blocks.
+3. Not only do I need to remove blocks in those unusual combinations, I have to be able to remove all the blocks as necessary, AND do a recheck. I must recheck and clear blocks until the check comes up negative. I.E., it should look something like:
+
+while valid_words:
+    do_check()
+    clear_blocks()
+    add_points()
+    
+Once "while valid_words" pops False (when the list is length 0), the game will continue. But the game should effectively be paused until this loop is exited.
+I want clear_blocks to have a visual component. I don't want the blocks to disappear without any fanfare -- there should be some kind of acknowledgement, maybe highlighting them or displaying the last word cleared somewhere onscreen. I will also need to allow for the dispersal of points as in the add_points function.

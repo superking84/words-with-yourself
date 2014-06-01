@@ -5,6 +5,7 @@ from pygame.locals import *
 import objects
 from colors import *
 import letters, scramble
+from wordlist import Wordlist
 
 # set the window's position onscreen
 x = 450
@@ -34,7 +35,6 @@ def terminate():
     pygame.quit()
     sys.exit()
 
-# drawing functions
 def draw_screen(surface, field):
     '''
     Draws the given field and its current state to the display surface.
@@ -61,16 +61,91 @@ def draw_screen(surface, field):
         (FIELD_WIDTH, SCREEN_HEIGHT))
     pygame.draw.line(surface, BLACK, (FIELD_WIDTH, (SCREEN_HEIGHT / 4) * 3), \
         (SCREEN_WIDTH, (SCREEN_HEIGHT / 4) * 3))
+    F1HEIGHT = CELL_HEIGHT * field.floor_one
+    pygame.draw.line(surface, BLACK, (0, F1HEIGHT), (FIELD_WIDTH, F1HEIGHT))
             
 def draw_outlined_rect(surface, color, rect):
     pygame.draw.rect(surface, color, rect)
     pygame.draw.rect(surface, BLACK, rect, 1)
        
-def tick(field):
+def strip_row(field, row, column_index):
+    '''
+    For a given column index, return a list that consists of all items that
+    are connected and can, thus, be considered in word checking.
+    ex. ['A', 'C', 'F', None, 'G', 'R', None, 'Q']
+    Running strip_row on the above list with an index of 4 will return
+    ['G', 'R'] which would obviously be too small for word checking.
+    Running it with an index of 0 would return ['A', 'C', 'F'] which can be
+    used.
+    '''
+    if row[column_index] is None:
+        return None
+        
+    temp_row = row[::]
+    for i in range(column_index):
+        if row[i] is None:
+            temp_row = row[i+1:]
+            
+    temp_row2 = temp_row[::]
+    for j in range(len(temp_row)):
+        if temp_row[j] is None:
+            temp_row2 = temp_row[:j]
+            break
+            
+    return temp_row2
+    
+def get_stripped_rows(field, row_index, column_index):
+    output = []
+    
+    for i in range(row_index, len(field.cells)):
+        row = field.cells[i]
+        if not row[column_index]:
+            break
+        output.append(strip_row(field, row, column_index))
+        
+    return output
+    
+def get_column(field, row_index, column_index):
+    output = []
+    
+    current_row = row_index
+    while field.cells[current_row][column_index] is not None \
+        and current_row < len(field.cells):
+            output.append(field.cells[current_row][column_index])
+            current_row += 1
+        
+    return output
+    
+       
+def tick(field, wordlist):
     if field.active_tile_has_landed():
-        active_tile_column = field.active_tile.location[1]
-        field.drop_column(active_tile_column)
+        if field.active_tile.wildcard:
+            print "Active tile's letter before: " + str(field.active_tile.letter)
+            field.active_tile.wildcard = False
+            field.active_tile.letter = random.choice(field.letters)
+            print "Active tile's letter after: " + str(field.active_tile.letter)
+        else:
+            print "What?"
+        at_col = field.active_tile.location[1]
+        field.drop_column(at_col)
+        at_row = field.active_tile.location[0]
         field.deactivate_active_tile()
+        rows_to_check = get_stripped_rows(field, at_row, at_col)
+        rows_to_check.append(get_column(field, at_row, at_col))
+        print "Rows to check: ",
+        print rows_to_check
+        valid_words = []
+        for row in rows_to_check:
+            print "Row to check: ",
+            print row
+            word = wordlist.word_check(row)
+            if word:
+                valid_words.append(wordlist.word_check(row))
+        if any(valid_words):
+            print "Valid words: ",
+            print valid_words
+        else:
+            print "No valid words found this round."
     
     if not field.active_tile:
         field.get_tile_from_queue()
@@ -81,10 +156,12 @@ def tick(field):
     
     return True
      
+
+    
+    
 def intro():
     options = {'Play':play, 'Quit':terminate}
-    option_list = options.keys()
-    option_list.sort()
+    option_list = sorted(options.keys())
     curr_opt_index = 0
     option_text = []
     i = 0
@@ -123,6 +200,8 @@ def intro():
         pygame.display.update()
 
 def play():
+    wordlist = Wordlist()
+    
     # load font and messages
     pause_msg = "PAUSED"
     scrambler = scramble.Scrambler(pause_msg)
@@ -147,7 +226,7 @@ def play():
         if not (pause or game_over):
             time_counter += FPS
         if time_counter >= tick_delay:
-            if not tick(field):
+            if not tick(field, wordlist):
                 game_over = True
             time_counter = 0
         for event in pygame.event.get():
