@@ -119,7 +119,7 @@ def get_column(field, row_index, column_index):
        
 def tick(field, wordlist):
     if field.active_tile_has_landed():
-        if field.active_tile.wildcard:
+        if field.active_tile.wildcard and not field.active_tile.letter:
             print "Active tile's letter before: " + str(field.active_tile.letter)
             field.active_tile.wildcard = False
             field.active_tile.letter = random.choice(field.letters)
@@ -132,18 +132,21 @@ def tick(field, wordlist):
         field.deactivate_active_tile()
         rows_to_check = get_stripped_rows(field, at_row, at_col)
         rows_to_check.append(get_column(field, at_row, at_col))
-        print "Rows to check: ",
-        print rows_to_check
+        print "Rows to check: ", rows_to_check
         valid_words = []
         for row in rows_to_check:
-            print "Row to check: ",
-            print row
+            print "Row to check: ", row
             word = wordlist.word_check(row)
             if word:
                 valid_words.append(wordlist.word_check(row))
         if any(valid_words):
-            print "Valid words: ",
-            print valid_words
+            while any(valid_words):
+                print "Valid words: ", valid_words
+            # logic here needed to count up the score of each found word,
+            # display that onscreen, then flash the animation for each found
+            # word, remove them from the screen, restack the tiles, and repeat
+            # until a recheck yields an empty valid_words
+                valid_words = [] # placeholder to keep game moving till logic built
         else:
             print "No valid words found this round."
     
