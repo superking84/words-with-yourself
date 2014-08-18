@@ -20,8 +20,8 @@ class Wordlist(object):
     def word_check(self, tiles, rule=len):
         '''
         Check a list of letters against the wordlist for valid words.
-        Counting down from maxwordlength, the function returns the longest
-        possible word that is contained inside that list.
+        Counting down from maxwordlength, the function returns the best match
+        based on the rule entered into the function.
         '''
         letters = [tile.letter.lower() for tile in tiles]
         candidates = []

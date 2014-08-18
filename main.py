@@ -146,6 +146,8 @@ def tick(field, wordlist):
             # display that onscreen, then flash the animation for each found
             # word, remove them from the screen, restack the tiles, and repeat
             # until a recheck yields an empty valid_words
+                for word in valid_words:
+                    letters.Alphabet.get_base_word_score(alphabet, word) # TODO -- game instance needs personal alphabet?
                 valid_words = [] # placeholder to keep game moving till logic built
         else:
             print "No valid words found this round."
@@ -203,6 +205,7 @@ def intro():
         pygame.display.update()
 
 def play():
+    
     wordlist = Wordlist()
     
     # load font and messages

@@ -72,8 +72,8 @@ VALID WORDS NEED TO DISAPPEAR!
 Let's talk about making valid words disappear. This will be similar to, yet more complicated than Tritetris. In Tritetris, ONLY complete lines disappeared, which means all I had to do was pop the line from the grid and push a new, blank one on top.
 
 In WWY, the following combinations of blocks can be removed:
-1. One or more rows of 3+ blocks.
-2. One or more columns of 3+ blocks.
+1. One or more horizontal sets of 3+ blocks.
+2. One or more vertical sets of 3+ blocks.
 3. Not only do I need to remove blocks in those unusual combinations, I have to be able to remove all the blocks as necessary, AND do a recheck. I must recheck and clear blocks until the check comes up negative. I.E., it should look something like:
 
 while valid_words:
